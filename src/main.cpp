@@ -1,3 +1,7 @@
+/*
+Maquina Medieval de seleccion por color
+*/
+
 #include <MD_TCS230.h>
 #include <FreqCount.h>
 #include <Stepper.h>
