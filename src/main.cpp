@@ -22,37 +22,35 @@ Maquina Medieval de seleccion por color
 #define  FIN_CARRERA_I    3                             // Fin de Carrera Izquierdo
 #define  FIN_CARRERA_M    4                             // Fin de Carrera Rojo
 
-#define VELOCIDAD 300
-#define PASOS 200
+#define VELOCIDAD 300                                   // Velocidad del Motor rpm
+#define PASOS 200                                       // Pasos de motor
 
+// Para el switch case del setup (creo)
 #define BLANCO  0
 #define NEGRO   1
-
 int ByN =     0;
-//const int pasosStepper = 200;
 
+// Inicializa la libreria del sensor de COLOR en CS MT_TCS230.h
 MD_TCS230	CS(S2, S3);
 
+// Inicializa la libreria del motor paso a paso stepper.h
 Stepper motorPaP(PASOS, MOTOR0, MOTOR1, MOTOR2, MOTOR3);
 
+// define la variables de la librería MT_TCS230
 colorData	rgb;
-
-// Variables de estado del firm
-bool calibracion  = false;
-bool datoLeido    = false;
-bool fdcI         = false;
-bool fdcD         = false;
-
 sensorData	sd;
+// Valores del programa de calibración
 sensorData sdBlack = { 10250, 10490, 13910 };
 sensorData sdWhite = { 128850, 124230, 141520 };
 
-// Color Table for matching
+// Estructura de que contie la una tabla de colores para hacer las comparaciones
+// Los valores se obtienen del programa de calibracion
 typedef struct
 {
   char    name[9];  // color name 8+nul
   colorData rgb;    // RGB value
 } colorTable;
+// Valores del programa de calibración
 colorTable ct[] =
 {
 {"NADA", {50, 25, 21} },            // 0 NEGRO
@@ -61,6 +59,13 @@ colorTable ct[] =
 {"AZUL", {11, 45, 105} },           // 3 AZUL
 };
 
+
+// Variables de estado de la máquina
+bool calibracion  = false;
+bool datoLeido    = false;
+bool fdcI         = false;
+bool fdcD         = false;
+bool fdcM         = false;
 
 // ===========================================================
 // Compara color leido con la tabla fija
@@ -136,7 +141,7 @@ void readSensor()
 }
 
 // ===========================================================
-// Motor busca Fines de Carrera
+// Desliga las bobinas del motor para preservar la circuitería berreta
 void motorOFF ()
 {
   digitalWrite(MOTOR0, LOW);
@@ -159,14 +164,13 @@ void motorFCD ()
     {
       motorPaP.step(1);
     }
-    fdcD = true;
-    fdcI = false;
+    motorPaP.step(200);
     while( digitalRead(FIN_CARRERA_D) )
     {
       motorPaP.step(-1);
     }
     motorPaP.step(-400);
-    Serial.println(F("[FIN DE CARRERA DERECHO OK motorFCD()]"));
+    Serial.println(F("[FIN DE CARRERA DERECHO OK]"));
     Serial.println(F(""));
     motorOFF();
     delay(1000);
@@ -175,6 +179,7 @@ void motorFCD ()
   motorOFF();
   fdcD = true;
   fdcI = false;
+  fdcM = false;
 }
 
 // ===========================================================
@@ -190,8 +195,7 @@ void motorFCI ()
     {
       motorPaP.step(-1);
     }
-    fdcD = false;
-    fdcI = true;
+    motorPaP.step(-200);
     while( digitalRead(FIN_CARRERA_I) )
     {
       motorPaP.step(1);
@@ -205,7 +209,61 @@ void motorFCI ()
 
   fdcD = false;
   fdcI = true;
+  fdcM = false;
 }
+
+
+// ===========================================================
+// Motor busca Fin de Carrera MEDIO
+void motorFCM ()
+{
+  int contador = 0;
+
+  if (fdcM)
+  {
+
+  }
+  else
+  {
+    if ( fdcI )
+    {
+      Serial.println(F("[pisteando como un campeón desde la IZQUIERDA camino al medio]"));
+      while( !digitalRead(FIN_CARRERA_M) )
+      {
+        motorPaP.step(1);
+      }
+      motorPaP.step(200);
+      while( digitalRead(FIN_CARRERA_M) )
+      {
+        motorPaP.step(1);
+        contador++;
+      }
+      motorPaP.step(-(contador / 2));
+    }
+    if ( fdcD )
+    {
+      Serial.println(F("[pisteando como un campeón desde la DERECHA camino al medio]"));
+      while( !digitalRead(FIN_CARRERA_M) )
+      {
+        motorPaP.step(-1);
+      }
+      motorPaP.step(-200);
+      while( digitalRead(FIN_CARRERA_M) )
+      {
+        motorPaP.step(-1);
+        contador++;
+      }
+      motorPaP.step(contador / 2);
+    }
+  }
+
+  fdcD = false;
+  fdcI = false;
+  fdcM = true;
+  motorOFF();
+  delay(1000);
+}
+
 
 // ===========================================================
 // Motor busca Fines de Carrera Para el SETUP
@@ -267,6 +325,8 @@ void motorFC ()
   }
   motorPaP.step(30);
   motorOFF();
+  fdcD = false;
+  fdcI = true;
   delay(1000);
 }
 
@@ -295,6 +355,7 @@ void motorColor(int color)
 
     case 3:
       Serial.println(F("Tercer Color"));
+      motorFCM();
       delay(1000);
       break;
   }
@@ -306,11 +367,12 @@ void motorColor(int color)
 // Setup
 void setup()
 {
+  // setea los pines de los fines de carrera como entrada
   pinMode(FIN_CARRERA_D, INPUT);
   pinMode(FIN_CARRERA_I, INPUT);
   pinMode(FIN_CARRERA_M, INPUT);
 
-  Serial.begin(115200);                               // inicia comunicacion serie a 115200baudios
+  Serial.begin(115200);                                                         // inicia comunicacion serie a 115200baudios
   Serial.println(F("[Maquina Medieval de colores]"));
   Serial.println(F("[ver. 0.0.0.0.0.1]"));
   Serial.println(F(""));
@@ -322,7 +384,7 @@ void setup()
   {
     calibracion = true;
   }
-  else                                              // Usa los datos de cali harcodeados.
+  else                                                                          // Usa los datos de calibracion harcodeados.
   {
     CS.setDarkCal(&sdBlack);
     CS.setWhiteCal(&sdWhite);
@@ -384,5 +446,4 @@ void loop()
       motorColor(i);
     }
   }
-
 }
