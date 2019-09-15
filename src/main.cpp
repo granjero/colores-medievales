@@ -8,8 +8,9 @@ Maquina Medieval de seleccion por color
 
 // PINES
 // Sensor de color
-//#define  S0                                           // PIN S0 del Sensor de color en HIGH por hardware
-//#define  S1                                           // PIN S1 del Sensor de color en HIGH por hardware
+
+// S0                                                   // PIN S0 del Sensor de color en HIGH por hardware
+// S1                                                   // PIN S1 del Sensor de color en HIGH por hardware
 #define  S2              12                             // Salida del Sensor de color S2 al pin 12 del micro
 #define  S3              13                             // Salida del Sensor de color S3 al pin 13 del micro
 // Motor Paso a Paso
@@ -96,7 +97,10 @@ uint8_t colorMatch(colorData *rgb)
 		if (v == 0)		// perfect match, no need to search more
 			break;
 	}
-  Serial.println(minI);
+  Serial.print(F("Color RGB detectado: "));
+  Serial.println(ct[minI].name);
+  Serial.println(F(""));
+
 	return(minI);
 }
 
@@ -104,7 +108,6 @@ uint8_t colorMatch(colorData *rgb)
 // Lee sensor
 void readSensor()
 {
-  // Serial.println(F("Funcion readSensor()"));
   static  bool  waiting;
 
   if (!waiting)
@@ -117,6 +120,8 @@ void readSensor()
   {
     if (CS.available())
     {
+      Serial.print(F("Valores leidos por el Sensor: "));
+
       CS.getRaw(&sd);
       Serial.print("RAW [");
       Serial.print(sd.value[0]);
@@ -124,7 +129,7 @@ void readSensor()
       Serial.print(sd.value[1]);
       Serial.print(",");
       Serial.print(sd.value[2]);
-      Serial.println("]");
+      Serial.print("] ");
 
       CS.getRGB(&rgb);
       Serial.print("RGB [");
@@ -212,7 +217,6 @@ void motorFCI ()
   fdcM = false;
 }
 
-
 // ===========================================================
 // Motor busca Fin de Carrera MEDIO
 void motorFCM ()
@@ -227,7 +231,7 @@ void motorFCM ()
   {
     if ( fdcI )
     {
-      Serial.println(F("[pisteando como un campeón desde la IZQUIERDA camino al medio]"));
+      Serial.println(F("[Buscando FdC MEDIO] ->"));
       while( !digitalRead(FIN_CARRERA_M) )
       {
         motorPaP.step(1);
@@ -242,7 +246,7 @@ void motorFCM ()
     }
     if ( fdcD )
     {
-      Serial.println(F("[pisteando como un campeón desde la DERECHA camino al medio]"));
+      Serial.println(F("[Buscando FdC MEDIO] <-"));
       while( !digitalRead(FIN_CARRERA_M) )
       {
         motorPaP.step(-1);
@@ -264,7 +268,6 @@ void motorFCM ()
   delay(1000);
 }
 
-
 // ===========================================================
 // Motor busca Fines de Carrera Para el SETUP
 void motorFC ()
@@ -272,8 +275,6 @@ void motorFC ()
   Serial.println(F("[CHEQUEA FINES DE CARRERA]"));
   int pasosFCFC = 0;
   Serial.println(F("[Buscando FdC derecho...]"));
-  Serial.println(F(""));
-
   // BUSCA FIN DE CARRERA DERECHO
   while( !digitalRead(FIN_CARRERA_D) )
   {
@@ -287,7 +288,7 @@ void motorFC ()
       {}
     }
   }
-  Serial.println(F("[FIN DE CARRERA DERECHO OK]"));
+  Serial.println(F("[FdC DERECHO OK]"));
   Serial.println(F(""));
   while (digitalRead(FIN_CARRERA_D))
   {
@@ -300,8 +301,6 @@ void motorFC ()
 
   // BUSCA FIN DE CARRERA IZQUIERDO
   Serial.println(F("[Buscando FdC izquierdo...]"));
-  Serial.println(F(""));
-
   while( !digitalRead(FIN_CARRERA_I) )
   {
     pasosFCFC++;
@@ -316,7 +315,7 @@ void motorFC ()
     }
   }
 
-  Serial.println(F("FIN DE CARRERA IZQUIERDA OK"));
+  Serial.println(F("[FdC IZQUIERDA OK]"));
   Serial.println(F(""));
   while ( digitalRead(FIN_CARRERA_I) )
   {
@@ -342,26 +341,24 @@ void motorColor(int color)
       break;
 
     case 1:
-      Serial.println(F("Primer Color"));
-      motorFCD();
-      delay(1000);
-      break;
-
-    case 2:
-      Serial.println(F("Segundo Color"));
+      Serial.println(F("Ir a Posición 1"));
       motorFCI();
       delay(1000);
       break;
 
-    case 3:
-      Serial.println(F("Tercer Color"));
+    case 2:
+      Serial.println(F("Ir a Posición 2"));
       motorFCM();
+      delay(1000);
+      break;
+
+    case 3:
+      Serial.println(F("Ir a Posición 3"));
+      motorFCD();
       delay(1000);
       break;
   }
 }
-
-
 
 // ===========================================================
 // Setup
@@ -378,6 +375,7 @@ void setup()
   Serial.println(F(""));
 
   motorPaP.setSpeed(VELOCIDAD);
+
   CS.begin();
 
   if (digitalRead(FIN_CARRERA_I) && digitalRead(FIN_CARRERA_D))                 // Tocaron el boton de calibración. Por lo que está en uno
@@ -391,7 +389,6 @@ void setup()
     motorFC();
   }
 }
-
 
 // ===========================================================
 // Loop
@@ -435,14 +432,16 @@ void loop()
       }
     }
   }
+
   else
   {
     readSensor();
     if(datoLeido)
     {
       uint8_t	i = colorMatch(&rgb);
-      Serial.print(F("\nColor: "));
-      Serial.println(ct[i].name);
+      //Serial.print(F("\nColor: "));
+      //Serial.println(ct[i].name);
+      //Serial.println(F("..."));
       motorColor(i);
     }
   }
