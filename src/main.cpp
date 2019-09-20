@@ -13,18 +13,25 @@ Maquina Medieval de seleccion por color
 // S1                                                   // PIN S1 del Sensor de color en HIGH por hardware
 #define  S2              12                             // Salida del Sensor de color S2 al pin 12 del micro
 #define  S3              13                             // Salida del Sensor de color S3 al pin 13 del micro
+
 // Motor Paso a Paso
-#define  MOTOR0           8
+#define  MOTOR0           8                             // Pines
 #define  MOTOR1           9
 #define  MOTOR2           10
 #define  MOTOR3           11
+#define  PASOS            200                           // Pasos de motor
+#define  VELOCIDAD        300                           // Velocidad del Motor rpm
+
+// Motor DC
+#define  MOTORADCA        A0                             // Pines
+#define  MOTORADCB        A1                             // Pines
+
 // Fines de Carrera
 #define  FIN_CARRERA_D    2                             // Fin de Carrera Derecho
 #define  FIN_CARRERA_I    3                             // Fin de Carrera Izquierdo
 #define  FIN_CARRERA_M    4                             // Fin de Carrera Rojo
-
-#define VELOCIDAD 300                                   // Velocidad del Motor rpm
-#define PASOS 200                                       // Pasos de motor
+#define  FIN_CARRERA_AB   A4                            // Fin de Carrera Arriba
+#define  FIN_CARRERA_AR   A5                            // Fin de Carrera Arriba
 
 // Para el switch case del setup (creo)
 #define BLANCO  0
@@ -361,6 +368,31 @@ void motorColor(int color)
 }
 
 // ===========================================================
+// Motor DC Sube y Baja
+void motorDC ()
+{ 
+  Serial.println(F("SUBE"));
+  while ( ! digitalRead (FIN_CARRERA_AR) )
+  {
+    digitalWrite(MOTORADCA, LOW);
+    digitalWrite(MOTORADCB, HIGH);
+  }
+  Serial.println(F("BAJA"));
+
+  while ( ! digitalRead (FIN_CARRERA_AB) )
+  {
+    digitalWrite(MOTORADCA, HIGH);
+    digitalWrite(MOTORADCB, LOW);
+  }
+
+  digitalWrite(MOTORADCA, LOW);
+  digitalWrite(MOTORADCB, LOW);
+
+
+}
+
+
+// ===========================================================
 // Setup
 void setup()
 {
@@ -368,6 +400,10 @@ void setup()
   pinMode(FIN_CARRERA_D, INPUT);
   pinMode(FIN_CARRERA_I, INPUT);
   pinMode(FIN_CARRERA_M, INPUT);
+  pinMode(FIN_CARRERA_AR, INPUT); // analog
+  pinMode(FIN_CARRERA_AB, INPUT); // analog
+  pinMode(MOTORADCA, OUTPUT);
+  pinMode(MOTORADCB, OUTPUT);
 
   Serial.begin(115200);                                                         // inicia comunicacion serie a 115200baudios
   Serial.println(F("[Maquina Medieval de colores]"));
@@ -386,7 +422,7 @@ void setup()
   {
     CS.setDarkCal(&sdBlack);
     CS.setWhiteCal(&sdWhite);
-    motorFC();
+    //motorFC();
   }
 }
 
@@ -435,6 +471,18 @@ void loop()
 
   else
   {
+
+    // test vertical
+    int arriba  = digitalRead(FIN_CARRERA_AR);
+    int abajo   = digitalRead(FIN_CARRERA_AB);
+
+    Serial.print(F("Valor Arriba: "));
+    Serial.println(arriba);
+    Serial.print(F("Valor Abajo: "));
+    Serial.println(abajo);
+    motorDC();
+    delay(5000);
+    /*
     readSensor();
     if(datoLeido)
     {
@@ -444,5 +492,6 @@ void loop()
       //Serial.println(F("..."));
       motorColor(i);
     }
+    */
   }
 }
