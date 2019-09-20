@@ -48,8 +48,8 @@ Stepper motorPaP(PASOS, MOTOR0, MOTOR1, MOTOR2, MOTOR3);
 colorData	rgb;
 sensorData	sd;
 // Valores del programa de calibración
-sensorData sdBlack = { 10250, 10490, 13910 };
-sensorData sdWhite = { 128850, 124230, 141520 };
+sensorData sdBlack = { 10820, 11200, 14900 };
+sensorData sdWhite = { 125680, 121120, 137210 };
 
 // Estructura de que contie la una tabla de colores para hacer las comparaciones
 // Los valores se obtienen del programa de calibracion
@@ -62,18 +62,33 @@ typedef struct
 colorTable ct[] =
 {
 {"NADA", {50, 25, 21} },            // 0 NEGRO
-{"BLANCO", {248, 246, 245} },       // 1 BLANCO
-{"ROJO", {106, 16, 19} },           // 2 ROJO
-{"AZUL", {11, 45, 105} },           // 3 AZUL
+{"BLANCO", {255, 255, 255} },       // 1 BLANCO
+{"ROJO", {104, 13, 17} },           // 2 ROJO
+{"AZUL", {10, 46, 109} },           // 3 AZUL
 };
 
 
 // Variables de estado de la máquina
-bool calibracion  = false;
-bool datoLeido    = false;
-bool fdcI         = false;
-bool fdcD         = false;
-bool fdcM         = false;
+int  paso           = 0;
+int  contador       = 0;
+int  colorLeido[2]  ={22,44};
+bool calibracion    = false;
+bool datoLeido      = false;
+bool fdcI           = false;
+bool fdcD           = false;
+bool fdcM           = false;
+
+
+
+/*
+  ______ _    _ _   _  _____ _____ ____  _   _ ______  _____
+ |  ____| |  | | \ | |/ ____|_   _/ __ \| \ | |  ____|/ ____|
+ | |__  | |  | |  \| | |      | || |  | |  \| | |__  | (___
+ |  __| | |  | | . ` | |      | || |  | | . ` |  __|  \___ \
+ | |    | |__| | |\  | |____ _| || |__| | |\  | |____ ____) |
+ |_|     \____/|_| \_|\_____|_____\____/|_| \_|______|_____/
+
+*/
 
 // ===========================================================
 // Compara color leido con la tabla fija
@@ -115,11 +130,14 @@ uint8_t colorMatch(colorData *rgb)
 // Lee sensor
 void readSensor()
 {
+  //Serial.println(F("readSensor()"));
+
   static  bool  waiting;
 
   if (!waiting)
   {
     CS.read();
+    //Serial.println(F("CS.read()"));
     waiting   = true;
     datoLeido = false;
   }
@@ -127,9 +145,8 @@ void readSensor()
   {
     if (CS.available())
     {
-      Serial.print(F("Valores leidos por el Sensor: "));
-
       CS.getRaw(&sd);
+      Serial.print(F("readSensor() -> Valores Leidos "));
       Serial.print("RAW [");
       Serial.print(sd.value[0]);
       Serial.print(",");
@@ -369,28 +386,25 @@ void motorColor(int color)
 
 // ===========================================================
 // Motor DC Sube y Baja
-void motorDC ()
-{ 
+void motorDC()
+{
   Serial.println(F("SUBE"));
   while ( ! digitalRead (FIN_CARRERA_AR) )
   {
     digitalWrite(MOTORADCA, LOW);
     digitalWrite(MOTORADCB, HIGH);
   }
-  Serial.println(F("BAJA"));
 
+  Serial.println(F("BAJA"));
   while ( ! digitalRead (FIN_CARRERA_AB) )
   {
     digitalWrite(MOTORADCA, HIGH);
     digitalWrite(MOTORADCB, LOW);
   }
-
+  // Apaga el motor DC
   digitalWrite(MOTORADCA, LOW);
   digitalWrite(MOTORADCB, LOW);
-
-
 }
-
 
 // ===========================================================
 // Setup
@@ -423,6 +437,7 @@ void setup()
     CS.setDarkCal(&sdBlack);
     CS.setWhiteCal(&sdWhite);
     //motorFC();
+    motorDC();
   }
 }
 
@@ -430,8 +445,9 @@ void setup()
 // Loop
 void loop()
 {
-//  Serial.println(F("LOOP"));
+  readSensor();
 
+//  Serial.println(F("LOOP"));
   if (calibracion)
   {
     readSensor();
@@ -471,27 +487,68 @@ void loop()
 
   else
   {
-
-    // test vertical
-    int arriba  = digitalRead(FIN_CARRERA_AR);
-    int abajo   = digitalRead(FIN_CARRERA_AB);
-
-    Serial.print(F("Valor Arriba: "));
-    Serial.println(arriba);
-    Serial.print(F("Valor Abajo: "));
-    Serial.println(abajo);
-    motorDC();
-    delay(5000);
-    /*
-    readSensor();
-    if(datoLeido)
+    switch (paso)
     {
-      uint8_t	i = colorMatch(&rgb);
-      //Serial.print(F("\nColor: "));
-      //Serial.println(ct[i].name);
-      //Serial.println(F("..."));
-      motorColor(i);
+      case 0:
+        Serial.println(F("paso 0"));
+        delay(5000);
+        if ( datoLeido && contador <= 1)
+        {
+          Serial.println(F("dato leido y contador <= 1"));
+          colorLeido[contador] = colorMatch(&rgb);
+          Serial.println(colorLeido[contador]);
+          contador++;
+          delay(1000);
+        }
+        if ( contador < 1 )
+        {
+          if ( colorLeido[0] == colorLeido[1] )
+          {
+            Serial.println(F("dos lecturas iguales"));
+            delay(1000);
+            paso++;
+          }
+          else
+          {
+            Serial.println(F("dos lecturas distintas"));
+            delay(1000);
+            contador = 0;
+          }
+        }
+        break;
+
+      case 1:
+        Serial.println(F("paso 1"));
+        Serial.print(F("color detectado: "));
+        Serial.println(ct[colorLeido[1]].name);
+        paso = 0;
+        delay(1000);
+        break;
+
+      case 2:
+        break;
+
+      case 3:
+        break;
+
+      default:
+        break;
     }
-    */
+
+
+
+    // motorDC();
+    // delay(5000);
+    //
+    // readSensor();
+    // if(datoLeido)
+    // {
+    //   uint8_t	i = colorMatch(&rgb);
+    //   //Serial.print(F("\nColor: "));
+    //   //Serial.println(ct[i].name);
+    //   //Serial.println(F("..."));
+    //   motorColor(i);
+    // }
+
   }
 }
