@@ -62,16 +62,18 @@ typedef struct
 colorTable ct[] =
 {
 {"NADA", {50, 25, 21} },            // 0 NEGRO
-{"BLANCO", {255, 255, 255} },       // 1 BLANCO
-{"ROJO", {104, 13, 17} },           // 2 ROJO
 {"AZUL", {10, 46, 109} },           // 3 AZUL
+{"ROJO", {104, 13, 17} },           // 2 ROJO
+{"BLANCO", {255, 255, 255} },       // 1 BLANCO
 };
 
 
 // Variables de estado de la máquina
 int  paso           = 0;
 int  contador       = 0;
-int  colorLeido[2]  ={22,44};
+int  colorLeido[2]  = {22,44};
+int  colorDestino   = 0;
+int  posicion       = 0;
 bool calibracion    = false;
 bool datoLeido      = false;
 bool fdcI           = false;
@@ -362,24 +364,28 @@ void motorColor(int color)
     case 0:
       Serial.println(F("SIN LECTURA"));
       motorOFF();
+      posicion = 0;
       break;
 
     case 1:
-      Serial.println(F("Ir a Posición 1"));
+      Serial.println(F("Ir a Posición 1 - IZ"));
       motorFCI();
       delay(1000);
+      posicion = 1;
       break;
 
     case 2:
-      Serial.println(F("Ir a Posición 2"));
+      Serial.println(F("Ir a Posición 2 - M"));
       motorFCM();
       delay(1000);
+      posicion = 2;
       break;
 
     case 3:
-      Serial.println(F("Ir a Posición 3"));
+      Serial.println(F("Ir a Posición 3 - D"));
       motorFCD();
       delay(1000);
+      posicion = 3;
       break;
   }
 }
@@ -436,7 +442,7 @@ void setup()
   {
     CS.setDarkCal(&sdBlack);
     CS.setWhiteCal(&sdWhite);
-    //motorFC();
+    motorFC();
     motorDC();
   }
 }
@@ -490,28 +496,28 @@ void loop()
     switch (paso)
     {
       case 0:
-        Serial.println(F("paso 0"));
-        delay(5000);
         if ( datoLeido && contador <= 1)
         {
           Serial.println(F("dato leido y contador <= 1"));
           colorLeido[contador] = colorMatch(&rgb);
-          Serial.println(colorLeido[contador]);
           contador++;
-          delay(1000);
+          //delay(1000);
         }
-        if ( contador < 1 )
+        if ( contador > 1 )
         {
           if ( colorLeido[0] == colorLeido[1] )
           {
             Serial.println(F("dos lecturas iguales"));
-            delay(1000);
+            colorDestino = colorLeido[0];
+            colorLeido[0]  = 44;
+            colorLeido[1]  = 14;
             paso++;
+            contador = 0;
           }
           else
           {
             Serial.println(F("dos lecturas distintas"));
-            delay(1000);
+            //delay(1000);
             contador = 0;
           }
         }
@@ -520,18 +526,27 @@ void loop()
       case 1:
         Serial.println(F("paso 1"));
         Serial.print(F("color detectado: "));
-        Serial.println(ct[colorLeido[1]].name);
-        paso = 0;
-        delay(1000);
+        Serial.println(ct[colorDestino].name);
+        Serial.println(F("mover a color "));
+        motorColor(colorDestino);
+        paso++;
+        //delay(1000);
         break;
 
       case 2:
+        Serial.println(F("paso 2"));
+        Serial.println(F("descarta pieza"));
+        motorDC();
+        paso = 0;
+        contador = 0;
         break;
 
       case 3:
+        paso++;
         break;
 
       default:
+        paso = 0;
         break;
     }
 
