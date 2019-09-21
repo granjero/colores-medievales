@@ -121,9 +121,9 @@ uint8_t colorMatch(colorData *rgb)
 		if (v == 0)		// perfect match, no need to search more
 			break;
 	}
-  Serial.print(F("Color RGB detectado: "));
+  Serial.print(F("colorMatch() - "));
   Serial.println(ct[minI].name);
-  Serial.println(F(""));
+  // Serial.println(F(""));
 
 	return(minI);
 }
@@ -148,7 +148,7 @@ void readSensor()
     if (CS.available())
     {
       CS.getRaw(&sd);
-      Serial.print(F("readSensor() -> Valores Leidos "));
+      Serial.print(F("readSensor() - "));
       Serial.print("RAW [");
       Serial.print(sd.value[0]);
       Serial.print(",");
@@ -427,7 +427,7 @@ void setup()
 
   Serial.begin(115200);                                                         // inicia comunicacion serie a 115200baudios
   Serial.println(F("[Maquina Medieval de colores]"));
-  Serial.println(F("[ver. 0.0.0.0.0.1]"));
+  Serial.println(F("[ver. 0.0.0.0.1]"));
   Serial.println(F(""));
 
   motorPaP.setSpeed(VELOCIDAD);
@@ -442,8 +442,8 @@ void setup()
   {
     CS.setDarkCal(&sdBlack);
     CS.setWhiteCal(&sdWhite);
-    motorFC();
-    motorDC();
+    // motorFC();
+    // motorDC();
   }
 }
 
@@ -498,8 +498,13 @@ void loop()
       case 0:
         if ( datoLeido && contador <= 1)
         {
-          Serial.println(F("dato leido y contador <= 1"));
+          Serial.println(F("\n{ Paso 0 }"));
+          Serial.print(F("dato leido y contador = "));
+          Serial.println(contador);
           colorLeido[contador] = colorMatch(&rgb);
+          Serial.print(F("color leido = "));
+          Serial.println(colorLeido[contador]);
+
           contador++;
           //delay(1000);
         }
@@ -507,6 +512,15 @@ void loop()
         {
           if ( colorLeido[0] == colorLeido[1] )
           {
+            if ( colorLeido[0] == 0 ) // Si el color detectado es el de "sin pieza" pasa al paso 3.
+            {
+              Serial.print(F("color cero "));
+              colorLeido[0]  = 44;
+              colorLeido[1]  = 14;
+              paso = 3;
+              contador = 0;
+              break;
+            }
             Serial.println(F("dos lecturas iguales"));
             colorDestino = colorLeido[0];
             colorLeido[0]  = 44;
@@ -514,6 +528,7 @@ void loop()
             paso++;
             contador = 0;
           }
+
           else
           {
             Serial.println(F("dos lecturas distintas"));
@@ -524,7 +539,7 @@ void loop()
         break;
 
       case 1:
-        Serial.println(F("paso 1"));
+        Serial.println(F("\n{ Paso 1 }"));
         Serial.print(F("color detectado: "));
         Serial.println(ct[colorDestino].name);
         Serial.println(F("mover a color "));
@@ -534,7 +549,7 @@ void loop()
         break;
 
       case 2:
-        Serial.println(F("paso 2"));
+        Serial.println(F("\n{ Paso 2 }"));
         Serial.println(F("descarta pieza"));
         motorDC();
         paso = 0;
@@ -542,7 +557,10 @@ void loop()
         break;
 
       case 3:
-        paso++;
+        Serial.println(F("\n{ Paso 3 }"));
+        Serial.println(F("No hubo lectura; no hago nada."));
+        paso = 0;
+        contador = 0;
         break;
 
       default:
