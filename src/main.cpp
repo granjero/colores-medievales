@@ -65,8 +65,10 @@ Stepper motorPaP(PASOS, MOTOR0, MOTOR1, MOTOR2, MOTOR3);
 colorData	rgb;
 sensorData	sd;
 // Valores del programa de calibración
-sensorData sdWhite = { 125680, 121120, 137210 };
-sensorData sdBlack = { 10820, 11200, 14900 };
+sensorData sdWhite = { 128490, 125410, 144230 };
+//sensorData sdWhite = { 125680, 121120, 137210 };
+sensorData sdBlack = { 11580, 12090, 16100 };
+// sensorData sdBlack = { 10820, 11200, 14900 };
 
 // Estructura de que contie la una tabla de colores para hacer las comparaciones
 // Los valores se obtienen del programa de calibracion
@@ -78,10 +80,15 @@ typedef struct
 // Valores del programa de calibración
 colorTable ct[] =
 {
-{"NADA", {50, 25, 21} },                // NEGRO
-{"color 1", {10, 46, 109} },            // AZUL
-{"color 2", {104, 13, 17} },            // ROJO
-{"color 3", {255, 255, 255} },          // BLANCO
+{ "NADA", {0, 0, 0} },
+//{"NADA", {50, 25, 21} },
+{"color 1", {8, 44, 107} },
+// {"color 1", {10, 46, 109} },
+{"color 2", {97, 9, 12} },
+// {"color 2", {104, 13, 17} },
+{"color 3", {253, 251, 248} },
+// {"color 3", {255, 255, 255} },
+
 };
 
 
@@ -500,6 +507,8 @@ void loop()
           Serial.print(F(", "));
           Serial.print(sd.value[2]);
           Serial.println(F(" };"));
+          CS.setWhiteCal(&sd);
+          delay(2000);
           paso++;
           contador = 0;
         }
@@ -526,6 +535,8 @@ void loop()
           Serial.print(F(", "));
           Serial.print(sd.value[2]);
           Serial.println(F(" };"));
+          CS.setDarkCal(&sd);
+          delay(2000);
           paso++;
           contador = 0;
         }
@@ -546,13 +557,14 @@ void loop()
         if ( datoLeido )
         {
           Serial.print(F("\nLinea para copiar -> "));
-          Serial.print(F("{ \"NADA\", {"));
+          Serial.print(F("{\"NADA\", {"));
           Serial.print(rgb.value[TCS230_RGB_R]);
           Serial.print(F(", "));
           Serial.print(rgb.value[TCS230_RGB_G]);
           Serial.print(F(", "));
           Serial.print(rgb.value[TCS230_RGB_B]);
-          Serial.println("} }");
+          Serial.println("} },");
+          delay(2000);
           paso++;
           contador = 0;
         }
@@ -573,13 +585,14 @@ void loop()
         if ( datoLeido )
         {
           Serial.print(F("\nLinea para copiar -> "));
-          Serial.print(F("{ \"color 1\", {"));
+          Serial.print(F("{\"color 1\", {"));
           Serial.print(rgb.value[TCS230_RGB_R]);
           Serial.print(F(", "));
           Serial.print(rgb.value[TCS230_RGB_G]);
           Serial.print(F(", "));
           Serial.print(rgb.value[TCS230_RGB_B]);
-          Serial.println("} }");
+          Serial.println("} },");
+          delay(2000);
           paso++;
           contador = 0;
         }
@@ -600,13 +613,14 @@ void loop()
         if ( datoLeido )
         {
           Serial.print(F("\nLinea para copiar -> "));
-          Serial.print(F("{ \"color 2\", {"));
+          Serial.print(F("{\"color 2\", {"));
           Serial.print(rgb.value[TCS230_RGB_R]);
           Serial.print(F(", "));
           Serial.print(rgb.value[TCS230_RGB_G]);
           Serial.print(F(", "));
           Serial.print(rgb.value[TCS230_RGB_B]);
-          Serial.println("} }");
+          Serial.println("} },");
+          delay(2000);
           paso++;
           contador = 0;
         }
@@ -627,13 +641,14 @@ void loop()
         if ( datoLeido )
         {
           Serial.print(F("\nLinea para copiar -> "));
-          Serial.print(F("{ \"color 3\", {"));
+          Serial.print(F("{\"color 3\", {"));
           Serial.print(rgb.value[TCS230_RGB_R]);
           Serial.print(F(", "));
           Serial.print(rgb.value[TCS230_RGB_G]);
           Serial.print(F(", "));
           Serial.print(rgb.value[TCS230_RGB_B]);
-          Serial.println("} }");
+          Serial.println("} },");
+          delay(2000);
           paso++;
           contador = 0;
         }
