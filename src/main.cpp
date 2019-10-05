@@ -99,6 +99,7 @@ int  contador       = 0;
 int  colorLeido[2]  = {22,44};
 int  colorDestino   = 0;
 int  posicion       = 0;
+int  distanciaFdC   = 0;
 bool calibracion    = false;
 bool datoLeido      = false;
 bool fdcI           = false;
@@ -284,33 +285,35 @@ void motorPaP_Medio ()
   {
     if ( fdcI )
     {
+      motorPaP.step(distanciaFdC);
       // Serial.println(F("[Buscando FdC MEDIO] ->"));
-      while( !digitalRead(FIN_CARRERA_M) )
-      {
-        motorPaP.step(1);
-      }
-      motorPaP.step(200);
-      while( digitalRead(FIN_CARRERA_M) )
-      {
-        motorPaP.step(1);
-        contador++;
-      }
-      motorPaP.step(-(contador / 2));
+      // while( !digitalRead(FIN_CARRERA_M) )
+      // {
+      //   motorPaP.step(1);
+      // }
+      // motorPaP.step(200);
+      // while( digitalRead(FIN_CARRERA_M) )
+      // {
+      //   motorPaP.step(1);
+      //   contador++;
+      // }
+      // motorPaP.step(-(contador / 2));
     }
     if ( fdcD )
     {
-      Serial.println(F("[Buscando FdC MEDIO] <-"));
-      while( !digitalRead(FIN_CARRERA_M) )
-      {
-        motorPaP.step(-1);
-      }
-      motorPaP.step(-200);
-      while( digitalRead(FIN_CARRERA_M) )
-      {
-        motorPaP.step(-1);
-        contador++;
-      }
-      motorPaP.step(contador / 2);
+      motorPaP.step(-distanciaFdC);
+      // Serial.println(F("[Buscando FdC MEDIO] <-"));
+      // while( !digitalRead(FIN_CARRERA_M) )
+      // {
+      //   motorPaP.step(-1);
+      // }
+      // motorPaP.step(-200);
+      // while( digitalRead(FIN_CARRERA_M) )
+      // {
+      //   motorPaP.step(-1);
+      //   contador++;
+      // }
+      // motorPaP.step(contador / 2);
     }
   }
 
@@ -339,46 +342,47 @@ void motorPaP_Setup  ()
       motorPaP_OFF();
       while (true)
       {}
-      }
     }
-    Serial.println(F("[FdC DERECHO OK]"));
-    Serial.println(F(""));
-    while (digitalRead(FIN_CARRERA_D))
-    {
-      motorPaP.step(-1);
-    }
-    motorPaP.step(-30);
-    motorPaP_OFF();
-    delay(1000);
+  }
+  Serial.println(F("[FdC DERECHO OK]"));
+  Serial.println(F(""));
+  while (digitalRead(FIN_CARRERA_D))
+  {
+    motorPaP.step(-1);
+  }
+  motorPaP.step(-30);
+  motorPaP_OFF();
+  delay(1000);
 
-    // BUSCA FIN DE CARRERA IZQUIERDO
-    Serial.println(F("[Busca FdC izquierdo... ]"));
-    while( !digitalRead(FIN_CARRERA_I) )
+  // BUSCA FIN DE CARRERA IZQUIERDO
+  Serial.println(F("[Busca FdC izquierdo... ]"));
+  while( !digitalRead(FIN_CARRERA_I) )
+  {
+    pasosFCFC++;
+    motorPaP.step(-1);
+    if (digitalRead(FIN_CARRERA_D))    // Encuentra fin de carrera derecho MAL
     {
-      pasosFCFC++;
-      motorPaP.step(-1);
-      if (digitalRead(FIN_CARRERA_D))    // Encuentra fin de carrera derecho MAL
-      {
-        Serial.println(F("[BUSCANDO FIN DE CARRERA IZQUIERDO ENCONTRÉ EL DERECHO]"));
-        Serial.println(F("[HALT & CATCH FIRE]"));
-        motorPaP_OFF();
-        while (true)
-        {}
-        }
-      }
-
-      Serial.println(F("[FdC IZQUIERDA OK]"));
-      Serial.println(F(""));
-      while ( digitalRead(FIN_CARRERA_I) )
-      {
-        motorPaP.step(1);
-      }
-      motorPaP.step(30);
+      Serial.println(F("[BUSCANDO FIN DE CARRERA IZQUIERDO ENCONTRÉ EL DERECHO]"));
+      Serial.println(F("[HALT & CATCH FIRE]"));
       motorPaP_OFF();
-      fdcD = false;
-      fdcI = true;
-      delay(1000);
+      while (true)
+      {}
     }
+  }
+
+  Serial.println(F("[FdC IZQUIERDA OK]"));
+  Serial.println(F(""));
+  while ( digitalRead(FIN_CARRERA_I) )
+  {
+    motorPaP.step(1);
+  }
+  motorPaP.step(30);
+  motorPaP_OFF();
+  fdcD = false;
+  fdcI = true;
+  pasosFCFC = distanciaFdC / 2;
+  delay(1000);
+}
 
 // ===========================================================
 // Motor Colores, hace algo diferente segun el color
@@ -420,35 +424,23 @@ void motorPaP_MueveAColor (int color)
 void motorDC_DescartaPieza()
 {
   Serial.print(F("SUBE... "));
-  //Serial.print(F("\nARRIBA = "));
-  //Serial.println(digitalRead(FIN_CARRERA_AR));
-  //Serial.print(F("ABAJO = "));
-  //Serial.println(digitalRead(FIN_CARRERA_AB));
-  //delay(1500);
+  // Motor DC sube
+  digitalWrite(MOTORADCA, LOW);
+  digitalWrite(MOTORADCB, HIGH);
   while ( ! digitalRead (FIN_CARRERA_AR) )
   {
-    digitalWrite(MOTORADCA, LOW);
-    digitalWrite(MOTORADCB, HIGH);
   }
-  Serial.print(F("\nARRIBA = "));
-  Serial.println(digitalRead(FIN_CARRERA_AR));
-  Serial.print(F("ABAJO = "));
-  Serial.println(digitalRead(FIN_CARRERA_AB));
   Serial.print(F("BAJA... "));
-  //Serial.print(F("\nARRIBA = "));
-  //Serial.println(digitalRead(FIN_CARRERA_AR));
-  //Serial.print(F("ABAJO = "));
-  //Serial.println(digitalRead(FIN_CARRERA_AB));
-  //delay(1500);
+  // Motor DC baja
+  digitalWrite(MOTORADCA, HIGH);
+  digitalWrite(MOTORADCB, LOW);
   while ( ! digitalRead (FIN_CARRERA_AB) )
   {
-    digitalWrite(MOTORADCA, HIGH);
-    digitalWrite(MOTORADCB, LOW);
   }
   // Apaga el motor DC
-  Serial.println(F("OK! "));
   digitalWrite(MOTORADCA, LOW);
   digitalWrite(MOTORADCB, LOW);
+  Serial.println(F("OK! "));
 }
 
 // ===========================================================
