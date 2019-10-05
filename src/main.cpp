@@ -15,40 +15,41 @@
 #include <FreqCount.h>                                  // https://github.com/PaulStoffregen/FreqCount
 #include <Stepper.h>                                    // https://www.arduino.cc/en/Reference/Stepper
 
-/*                                            _
-*                                           | |
-*  ___  ___ _ __  ___  ___  _ __    ___ ___ | | ___  _ __
-* / __|/ _ \ '_ \/ __|/ _ \| '__|  / __/ _ \| |/ _ \| '__|
-* \__ \  __/ | | \__ \ (_) | |    | (_| (_) | | (_) | |
-* |___/\___|_| |_|___/\___/|_|     \___\___/|_|\___/|_|
-*
-*  http://www.w-r-e.de/robotik/data/opt/tcs230.pdf
-*/
-
+/*
+ *  Sensor de Color
+ *  http://www.w-r-e.de/robotik/data/opt/tcs230.pdf
+ */
 
 // S0                                                   // PIN S0 del Sensor de color en HIGH por hardware
 // S1                                                   // PIN S1 del Sensor de color en HIGH por hardware
+// OUT                                                  // PIN OUT del sensor al pin 5 de arduino según MD_TCS230.h linea 27
+// OE                                                   // PIN Output Enable del Sensor en LOW por hardware
 #define  S2              12                             // Salida del Sensor de color S2 al pin 12 del micro
 #define  S3              13                             // Salida del Sensor de color S3 al pin 13 del micro
 
-// Motor Paso a Paso
-#define  MOTOR0           8                             // Pines
-#define  MOTOR1           9
-#define  MOTOR2           10
-#define  MOTOR3           11
-#define  PASOS            200                           // Pasos de motor
+/*
+ *  Motor Paso a Paso
+ *  http://www.dynetics.eu/media/2678/stepper-motors.pdf
+ */
+
+// Driver L298n -> OUT1 azul - OUT2 rojo - OUT3 verde - OUT4 negro
+#define  MOTOR0           8                             // Pin IN1 del driver paso a pasos
+#define  MOTOR1           9                             // Pin IN2 del driver paso a pasos
+#define  MOTOR2           10                            // Pin IN3 del driver paso a pasos
+#define  MOTOR3           11                            // Pin IN4 del driver paso a pasos
+#define  PASOS            200                           // Cantidad de pasos de motor
 #define  VELOCIDAD        300                           // Velocidad del Motor rpm
 
 // Motor DC
-#define  MOTORADCA        A0                             // Pines
-#define  MOTORADCB        A1                             // Pines
+#define  MOTORADCA        6                             // Pines
+#define  MOTORADCB        7                             // Pines
 
 // Fines de Carrera
-#define  FIN_CARRERA_D    2                             // Fin de Carrera Derecho
-#define  FIN_CARRERA_I    3                             // Fin de Carrera Izquierdo
-#define  FIN_CARRERA_M    4                             // Fin de Carrera Rojo
-#define  FIN_CARRERA_AB   A4                            // Fin de Carrera Arriba
-#define  FIN_CARRERA_AR   A5                            // Fin de Carrera Arriba
+#define  FIN_CARRERA_D    A0                            // Fin de Carrera Derecho
+#define  FIN_CARRERA_I    A1                            // Fin de Carrera Izquierdo
+#define  FIN_CARRERA_M    A2                            // Fin de Carrera Rojo
+#define  FIN_CARRERA_AB   A3                            // Fin de Carrera Arriba cable amarillo telefono
+#define  FIN_CARRERA_AR   A4                            // Fin de Carrera Arriba cable verde telefono
 
 // Para el switch case del setup (creo)
 #define BLANCO  0
@@ -379,361 +380,374 @@ void motorPaP_Setup  ()
       delay(1000);
     }
 
-    // ===========================================================
-    // Motor Colores, hace algo diferente segun el color
-    void motorPaP_MueveAColor (int color)
+// ===========================================================
+// Motor Colores, hace algo diferente segun el color
+void motorPaP_MueveAColor (int color)
+{
+  switch (color)
+  {
+    case 0:
+    Serial.println(F("SIN LECTURA"));
+    motorPaP_OFF();
+    posicion = 0;
+    break;
+
+    case 1:
+    Serial.println(F("Posición 1 - IZ"));
+    motorPaP_Izquirda();
+    delay(1000);
+    posicion = 1;
+    break;
+
+    case 2:
+    Serial.println(F("Posición 2 - M"));
+    motorPaP_Medio();
+    delay(1000);
+    posicion = 2;
+    break;
+
+    case 3:
+    Serial.println(F("Posición 3 - D"));
+    motorPaP_Derecha();
+    delay(1000);
+    posicion = 3;
+    break;
+  }
+}
+
+// ===========================================================
+// Motor DC Sube y Baja
+void motorDC_DescartaPieza()
+{
+  Serial.print(F("SUBE... "));
+  //Serial.print(F("\nARRIBA = "));
+  //Serial.println(digitalRead(FIN_CARRERA_AR));
+  //Serial.print(F("ABAJO = "));
+  //Serial.println(digitalRead(FIN_CARRERA_AB));
+  //delay(1500);
+  while ( ! digitalRead (FIN_CARRERA_AR) )
+  {
+    digitalWrite(MOTORADCA, LOW);
+    digitalWrite(MOTORADCB, HIGH);
+  }
+  Serial.print(F("\nARRIBA = "));
+  Serial.println(digitalRead(FIN_CARRERA_AR));
+  Serial.print(F("ABAJO = "));
+  Serial.println(digitalRead(FIN_CARRERA_AB));
+  Serial.print(F("BAJA... "));
+  //Serial.print(F("\nARRIBA = "));
+  //Serial.println(digitalRead(FIN_CARRERA_AR));
+  //Serial.print(F("ABAJO = "));
+  //Serial.println(digitalRead(FIN_CARRERA_AB));
+  //delay(1500);
+  while ( ! digitalRead (FIN_CARRERA_AB) )
+  {
+    digitalWrite(MOTORADCA, HIGH);
+    digitalWrite(MOTORADCB, LOW);
+  }
+  // Apaga el motor DC
+  Serial.println(F("OK! "));
+  digitalWrite(MOTORADCA, LOW);
+  digitalWrite(MOTORADCB, LOW);
+}
+
+// ===========================================================
+// Setup
+void setup()
+{
+  // setea los pines de los fines de carrera como entrada
+  pinMode(FIN_CARRERA_D, INPUT);
+  pinMode(FIN_CARRERA_I, INPUT);
+  pinMode(FIN_CARRERA_M, INPUT);
+  pinMode(FIN_CARRERA_AR, INPUT); // analog
+  pinMode(FIN_CARRERA_AB, INPUT); // analog
+  pinMode(MOTORADCA, OUTPUT);
+  pinMode(MOTORADCB, OUTPUT);
+
+  Serial.begin(115200);                                                         // inicia comunicacion serie a 115200baudios
+  Serial.println(F("[Maquina Medieval de colores]"));
+  Serial.println(F("[ver. 0.0.0.0.1]"));
+  Serial.println(F(""));
+
+  motorPaP.setSpeed(VELOCIDAD);
+
+  CS.begin();
+
+  if (digitalRead(FIN_CARRERA_I) && digitalRead(FIN_CARRERA_D))                 // Tocaron el boton de calibración. Por lo que está en uno
+  {
+    calibracion = true;
+  }
+  else                                                                          // Usa los datos de calibracion harcodeados.
+  {
+    CS.setDarkCal(&sdBlack);
+    CS.setWhiteCal(&sdWhite);
+    motorPaP_Setup();
+    motorDC_DescartaPieza();
+  }
+}
+
+// ===========================================================
+// Loop
+void loop()
+{
+
+  readSensor();
+  if (calibracion)
+  {
+    readSensor();
+    switch(paso)
     {
-      switch (color)
+      case 0:
+      if ( contador == 0 )
       {
-        case 0:
-        Serial.println(F("SIN LECTURA"));
-        motorPaP_OFF();
-        posicion = 0;
-        break;
-
-        case 1:
-        Serial.println(F("Posición 1 - IZ"));
-        motorPaP_Izquirda();
-        delay(1000);
-        posicion = 1;
-        break;
-
-        case 2:
-        Serial.println(F("Posición 2 - M"));
-        motorPaP_Medio();
-        delay(1000);
-        posicion = 2;
-        break;
-
-        case 3:
-        Serial.println(F("Posición 3 - D"));
-        motorPaP_Derecha();
-        delay(1000);
-        posicion = 3;
-        break;
+        Serial.println(F("[Modo Calibración]"));
+        Serial.println(F("\n1. Presentar muestra color BLANCO y pulsar FdC medio"));
+        contador++;
       }
+      while( !digitalRead(FIN_CARRERA_M) )
+      {
+        // readSensor();
+      }
+      if ( datoLeido )
+      {
+        Serial.println(F("Linea para copiar -> "));
+        Serial.print(F("sensorData sdWhite = { "));
+        Serial.print(sd.value[0]);
+        Serial.print(F(", "));
+        Serial.print(sd.value[1]);
+        Serial.print(F(", "));
+        Serial.print(sd.value[2]);
+        Serial.println(F(" };"));
+        CS.setWhiteCal(&sd);
+        delay(2000);
+        paso++;
+        contador = 0;
+      }
+      break;
+
+      case 1:
+      if ( contador == 0 )
+      {
+        Serial.println(F("\n2. Presentar muestra color NEGRO y pulsar FdC medio..."));
+        contador++;
+      }
+
+      while( !digitalRead(FIN_CARRERA_M) )
+      {
+        // readSensor();
+      }
+      if ( datoLeido )
+      {
+        Serial.println(F("Linea para copiar -> "));
+        Serial.print(F("sensorData sdBlack = { "));
+        Serial.print(sd.value[0]);
+        Serial.print(F(", "));
+        Serial.print(sd.value[1]);
+        Serial.print(F(", "));
+        Serial.print(sd.value[2]);
+        Serial.println(F(" };"));
+        CS.setDarkCal(&sd);
+        delay(2000);
+        paso++;
+        contador = 0;
+      }
+      break;
+
+      case 2:
+      if ( contador == 0 )
+      {
+        Serial.println(F("\n3. Liberar el sensor y pulsar FdC medio para valor sin muestra..."));
+        contador++;
+      }
+
+      while( !digitalRead(FIN_CARRERA_M) )
+      {
+        // readSensor();
+      }
+
+      if ( datoLeido )
+      {
+        Serial.println(F("Linea para copiar -> "));
+        Serial.print(F("{\"NADA\", {"));
+        Serial.print(rgb.value[TCS230_RGB_R]);
+        Serial.print(F(", "));
+        Serial.print(rgb.value[TCS230_RGB_G]);
+        Serial.print(F(", "));
+        Serial.print(rgb.value[TCS230_RGB_B]);
+        Serial.println("} },");
+        delay(2000);
+        paso++;
+        contador = 0;
+      }
+      break;
+
+      case 3:
+      if ( contador == 0 )
+      {
+        Serial.println(F("\n4. Colocar el primer color y pulsar FdC medio..."));
+        contador++;
+      }
+
+      while( !digitalRead(FIN_CARRERA_M) )
+      {
+        // readSensor();
+      }
+
+      if ( datoLeido )
+      {
+        Serial.println(F("Linea para copiar -> "));
+        Serial.print(F("{\"color 1\", {"));
+        Serial.print(rgb.value[TCS230_RGB_R]);
+        Serial.print(F(", "));
+        Serial.print(rgb.value[TCS230_RGB_G]);
+        Serial.print(F(", "));
+        Serial.print(rgb.value[TCS230_RGB_B]);
+        Serial.println("} },");
+        delay(2000);
+        paso++;
+        contador = 0;
+      }
+      break;
+
+      case 4:
+      if ( contador == 0 )
+      {
+        Serial.println(F("\n5. Colocar el segundo color y pulsar FdC medio..."));
+        contador++;
+      }
+
+      while( !digitalRead(FIN_CARRERA_M) )
+      {
+        // readSensor();
+      }
+
+      if ( datoLeido )
+      {
+        Serial.println(F("Linea para copiar -> "));
+        Serial.print(F("{\"color 2\", {"));
+        Serial.print(rgb.value[TCS230_RGB_R]);
+        Serial.print(F(", "));
+        Serial.print(rgb.value[TCS230_RGB_G]);
+        Serial.print(F(", "));
+        Serial.print(rgb.value[TCS230_RGB_B]);
+        Serial.println("} },");
+        delay(2000);
+        paso++;
+        contador = 0;
+      }
+      break;
+
+      case 5:
+      if ( contador == 0 )
+      {
+        Serial.println(F("\n6. Colocar el tercer color y pulsar FdC medio"));
+        contador++;
+      }
+
+      while( !digitalRead(FIN_CARRERA_M) )
+      {
+        // readSensor();
+      }
+
+      if ( datoLeido )
+      {
+        Serial.println(F("Linea para copiar -> "));
+        Serial.print(F("{\"color 3\", {"));
+        Serial.print(rgb.value[TCS230_RGB_R]);
+        Serial.print(F(", "));
+        Serial.print(rgb.value[TCS230_RGB_G]);
+        Serial.print(F(", "));
+        Serial.print(rgb.value[TCS230_RGB_B]);
+        Serial.println("} },");
+        delay(2000);
+        paso++;
+        contador = 0;
+      }
+      break;
+
+      case 6:
+      Serial.println(F("\nFIN CALIBRACION. Copiar valores obtenidos y volver a compilar y subir el programa"));
+      while ( true )
+      {
+      }
+      break;
     }
+  }
 
-    // ===========================================================
-    // Motor DC Sube y Baja
-    void motorDC_DescartaPieza()
+  else
+  {
+    readSensor();
+    switch (paso)
     {
-      Serial.print(F("SUBE... "));
-      while ( ! digitalRead (FIN_CARRERA_AR) )
+      case 0:
+      if ( datoLeido && contador <= 1) // Para evitar fallos hace dos lecturas y las compara.
       {
-        digitalWrite(MOTORADCA, LOW);
-        digitalWrite(MOTORADCB, HIGH);
+        colorLeido[contador] = colorMatch(&rgb);
+        Serial.println(F("\n{ Paso 0 }"));
+        Serial.print(F("Color leido = "));
+        Serial.println(ct[colorLeido[contador]].name);
+        // Serial.println(colorLeido[contador]);
+        Serial.print(F("Contador = "));
+        Serial.println(contador);
+        contador++;
       }
-
-      Serial.println(F("BAJA... "));
-      while ( ! digitalRead (FIN_CARRERA_AB) )
+      if ( contador > 1 )
       {
-        digitalWrite(MOTORADCA, HIGH);
-        digitalWrite(MOTORADCB, LOW);
-      }
-      // Apaga el motor DC
-      Serial.println(F("OK! "));
-      digitalWrite(MOTORADCA, LOW);
-      digitalWrite(MOTORADCB, LOW);
-    }
-
-    // ===========================================================
-    // Setup
-    void setup()
-    {
-      // setea los pines de los fines de carrera como entrada
-      pinMode(FIN_CARRERA_D, INPUT);
-      pinMode(FIN_CARRERA_I, INPUT);
-      pinMode(FIN_CARRERA_M, INPUT);
-      pinMode(FIN_CARRERA_AR, INPUT); // analog
-      pinMode(FIN_CARRERA_AB, INPUT); // analog
-      pinMode(MOTORADCA, OUTPUT);
-      pinMode(MOTORADCB, OUTPUT);
-
-      Serial.begin(115200);                                                         // inicia comunicacion serie a 115200baudios
-      Serial.println(F("[Maquina Medieval de colores]"));
-      Serial.println(F("[ver. 0.0.0.0.1]"));
-      Serial.println(F(""));
-
-      motorPaP.setSpeed(VELOCIDAD);
-
-      CS.begin();
-
-      if (digitalRead(FIN_CARRERA_I) && digitalRead(FIN_CARRERA_D))                 // Tocaron el boton de calibración. Por lo que está en uno
-      {
-        calibracion = true;
-      }
-      else                                                                          // Usa los datos de calibracion harcodeados.
-      {
-        CS.setDarkCal(&sdBlack);
-        CS.setWhiteCal(&sdWhite);
-        motorPaP_Setup();
-        motorDC_DescartaPieza();
-      }
-    }
-
-    // ===========================================================
-    // Loop
-    void loop()
-    {
-      // readSensor();
-      if (calibracion)
-      {
-        readSensor();
-        switch(paso)
+        if ( colorLeido[0] == colorLeido[1] )
         {
-          case 0:
-          if ( contador == 0 )
+          if ( colorLeido[0] == 0 ) // Si el color detectado es el de "sin pieza" pasa al paso 3.
           {
-            Serial.println(F("[Modo Calibración]"));
-            Serial.println(F("\n1. Presentar muestra color BLANCO y pulsar FdC medio"));
-            contador++;
-          }
-          while( !digitalRead(FIN_CARRERA_M) )
-          {
-            // readSensor();
-          }
-          if ( datoLeido )
-          {
-            Serial.println(F("Linea para copiar -> "));
-            Serial.print(F("sensorData sdWhite = { "));
-            Serial.print(sd.value[0]);
-            Serial.print(F(", "));
-            Serial.print(sd.value[1]);
-            Serial.print(F(", "));
-            Serial.print(sd.value[2]);
-            Serial.println(F(" };"));
-            CS.setWhiteCal(&sd);
-            delay(2000);
-            paso++;
+            Serial.println(F("Esperando pieza... "));
+            colorLeido[0]  = 44;
+            colorLeido[1]  = 14;
+            paso = 3;
             contador = 0;
+            break;
           }
-          break;
-
-          case 1:
-          if ( contador == 0 )
-          {
-            Serial.println(F("\n2. Presentar muestra color NEGRO y pulsar FdC medio..."));
-            contador++;
-          }
-
-          while( !digitalRead(FIN_CARRERA_M) )
-          {
-            // readSensor();
-          }
-          if ( datoLeido )
-          {
-            Serial.println(F("Linea para copiar -> "));
-            Serial.print(F("sensorData sdBlack = { "));
-            Serial.print(sd.value[0]);
-            Serial.print(F(", "));
-            Serial.print(sd.value[1]);
-            Serial.print(F(", "));
-            Serial.print(sd.value[2]);
-            Serial.println(F(" };"));
-            CS.setDarkCal(&sd);
-            delay(2000);
-            paso++;
-            contador = 0;
-          }
-          break;
-
-          case 2:
-          if ( contador == 0 )
-          {
-            Serial.println(F("\n3. Liberar el sensor y pulsar FdC medio para valor sin muestra..."));
-            contador++;
-          }
-
-          while( !digitalRead(FIN_CARRERA_M) )
-          {
-            // readSensor();
-          }
-
-          if ( datoLeido )
-          {
-            Serial.println(F("Linea para copiar -> "));
-            Serial.print(F("{\"NADA\", {"));
-            Serial.print(rgb.value[TCS230_RGB_R]);
-            Serial.print(F(", "));
-            Serial.print(rgb.value[TCS230_RGB_G]);
-            Serial.print(F(", "));
-            Serial.print(rgb.value[TCS230_RGB_B]);
-            Serial.println("} },");
-            delay(2000);
-            paso++;
-            contador = 0;
-          }
-          break;
-
-          case 3:
-          if ( contador == 0 )
-          {
-            Serial.println(F("\n4. Colocar el primer color y pulsar FdC medio..."));
-            contador++;
-          }
-
-          while( !digitalRead(FIN_CARRERA_M) )
-          {
-            // readSensor();
-          }
-
-          if ( datoLeido )
-          {
-            Serial.println(F("Linea para copiar -> "));
-            Serial.print(F("{\"color 1\", {"));
-            Serial.print(rgb.value[TCS230_RGB_R]);
-            Serial.print(F(", "));
-            Serial.print(rgb.value[TCS230_RGB_G]);
-            Serial.print(F(", "));
-            Serial.print(rgb.value[TCS230_RGB_B]);
-            Serial.println("} },");
-            delay(2000);
-            paso++;
-            contador = 0;
-          }
-          break;
-
-          case 4:
-          if ( contador == 0 )
-          {
-            Serial.println(F("\n5. Colocar el segundo color y pulsar FdC medio..."));
-            contador++;
-          }
-
-          while( !digitalRead(FIN_CARRERA_M) )
-          {
-            // readSensor();
-          }
-
-          if ( datoLeido )
-          {
-            Serial.println(F("Linea para copiar -> "));
-            Serial.print(F("{\"color 2\", {"));
-            Serial.print(rgb.value[TCS230_RGB_R]);
-            Serial.print(F(", "));
-            Serial.print(rgb.value[TCS230_RGB_G]);
-            Serial.print(F(", "));
-            Serial.print(rgb.value[TCS230_RGB_B]);
-            Serial.println("} },");
-            delay(2000);
-            paso++;
-            contador = 0;
-          }
-          break;
-
-          case 5:
-          if ( contador == 0 )
-          {
-            Serial.println(F("\n6. Colocar el tercer color y pulsar FdC medio"));
-            contador++;
-          }
-
-          while( !digitalRead(FIN_CARRERA_M) )
-          {
-            // readSensor();
-          }
-
-          if ( datoLeido )
-          {
-            Serial.println(F("Linea para copiar -> "));
-            Serial.print(F("{\"color 3\", {"));
-            Serial.print(rgb.value[TCS230_RGB_R]);
-            Serial.print(F(", "));
-            Serial.print(rgb.value[TCS230_RGB_G]);
-            Serial.print(F(", "));
-            Serial.print(rgb.value[TCS230_RGB_B]);
-            Serial.println("} },");
-            delay(2000);
-            paso++;
-            contador = 0;
-          }
-          break;
-
-          case 6:
-          Serial.println(F("\nFIN CALIBRACION. Copiar valores obtenidos y volver a compilar y subir el programa"));
-          while ( true )
-          {
-          }
-          break;
-        }
-      }
-
-      else
-      {
-        readSensor();
-        switch (paso)
-        {
-          case 0:
-          if ( datoLeido && contador <= 1) // Para evitar fallos hace dos lecturas y las compara.
-          {
-            colorLeido[contador] = colorMatch(&rgb);
-            Serial.println(F("\n{ Paso 0 }"));
-            Serial.print(F("Color leido = "));
-            Serial.println(ct[colorDestino].name);
-            // Serial.println(colorLeido[contador]);
-            Serial.print(F("Contador = "));
-            Serial.println(contador);
-            contador++;
-          }
-          if ( contador > 1 )
-          {
-            if ( colorLeido[0] == colorLeido[1] )
-            {
-              if ( colorLeido[0] == 0 ) // Si el color detectado es el de "sin pieza" pasa al paso 3.
-              {
-                Serial.println(F("Esperando pieza..."));
-                colorLeido[0]  = 44;
-                colorLeido[1]  = 14;
-                paso = 3;
-                contador = 0;
-                break;
-              }
-              Serial.println(F("Color confirmado. \nFin Paso 0"));
-              colorDestino = colorLeido[0];
-              colorLeido[0]  = 44;
-              colorLeido[1]  = 14;
-              paso++;
-              contador = 0;
-            }
-
-            else
-            {
-              Serial.println(F("Error en el sensado. Se reintenta."));
-              contador = 0;
-            }
-          }
-          break;
-
-          case 1:
-          Serial.println(F("\n{ Paso 1 }"));
-          // Serial.print(F("Color detectado: "));
-          // Serial.println(ct[colorDestino].name);
-          Serial.println(F("Moviendo a la posicicón del color... "));
-          motorPaP_MueveAColor(colorDestino);
-          Serial.println(F("Fin Paso 1 "));
+          Serial.println(F("Color confirmado. \nFin Paso 0"));
+          colorDestino = colorLeido[0];
+          colorLeido[0]  = 44;
+          colorLeido[1]  = 14;
           paso++;
-          break;
-
-          case 2:
-          Serial.println(F("\n{ Paso 2 }"));
-          Serial.println(F("Descarte de pieza:"));
-          motorDC_DescartaPieza();
-          paso = 0;
           contador = 0;
-          break;
+        }
 
-          case 3:
-          Serial.println(F("\n{ Paso 3 }"));
-          Serial.println(F("Esperado pieza, no hago nada."));
-          paso = 0;
+        else
+        {
+          Serial.println(F("Error en el sensado. Se reintenta."));
           contador = 0;
-          break;
-
-          default:
-          paso = 0;
-          contador = 0;
-          break;
         }
       }
+      break;
+
+      case 1:
+      Serial.println(F("\n{ Paso 1 }"));
+      // Serial.print(F("Color detectado: "));
+      // Serial.println(ct[colorDestino].name);
+      Serial.println(F("Moviendo a la posicicón del color... "));
+      motorPaP_MueveAColor(colorDestino);
+      Serial.println(F("Fin Paso 1 "));
+      paso++;
+      break;
+
+      case 2:
+      Serial.println(F("\n{ Paso 2 }"));
+      Serial.println(F("Descarte de pieza:"));
+      motorDC_DescartaPieza();
+      paso = 0;
+      contador = 0;
+      break;
+
+      case 3:
+      Serial.println(F("Esperado pieza, no hago nada."));
+      paso = 0;
+      contador = 0;
+      break;
+
+      default:
+      paso = 0;
+      contador = 0;
+      break;
     }
+  }
+}
