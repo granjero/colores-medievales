@@ -330,7 +330,7 @@ void motorPaP_Setup  ()
 {
   Serial.println(F("[CHEQUEANDO FINES DE CARRERA]"));
   int pasosFCFC = 0;
-  Serial.println(F("[Busca FdC derecho... ]"));
+  Serial.print(F("[Busca FdC derecho... ]"));
   // BUSCA FIN DE CARRERA DERECHO
   while( !digitalRead(FIN_CARRERA_D) )
   {
@@ -355,7 +355,7 @@ void motorPaP_Setup  ()
   delay(1000);
 
   // BUSCA FIN DE CARRERA IZQUIERDO
-  Serial.println(F("[Busca FdC izquierdo... ]"));
+  Serial.print(F("[Busca FdC izquierdo... ]"));
   while( !digitalRead(FIN_CARRERA_I) )
   {
     pasosFCFC++;
@@ -380,7 +380,7 @@ void motorPaP_Setup  ()
   motorPaP_OFF();
   fdcD = false;
   fdcI = true;
-  pasosFCFC = distanciaFdC / 2;
+  distanciaFdC = pasosFCFC / 2;
   delay(1000);
 }
 
