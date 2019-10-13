@@ -380,7 +380,6 @@ void motorDC_DescartaPieza()
   delay(150);
   digitalWrite(MOTORADCA, LOW);
   digitalWrite(MOTORADCB, LOW);
-  //delay(250);
   Serial.print(F("BAJA... "));
   // Motor DC baja
   digitalWrite(MOTORADCA, HIGH);
@@ -437,11 +436,13 @@ void setup()
 
   CS.begin();
 
+  // Calibracion de Colores
   if (digitalRead(FIN_CARRERA_I) && digitalRead(FIN_CARRERA_D))                 // Tocaron el boton de calibración. Por lo que está en uno
   {
     calibracion = true;
   }
 
+  // Entra en modo prueba de Desdcartador de pieza
   if (digitalRead(FIN_CARRERA_I) && !digitalRead(FIN_CARRERA_D))                 // Tocaron el boton de calibración. Por lo que está en uno
   {
     calibracion = true;
@@ -461,13 +462,6 @@ void setup()
 // Loop
 void loop()
 {
-  //Serial.println(digitalRead(FIN_CARRERA_AB));
-
-  // if( ! digitalRead (FIN_CARRERA_AB) )
-  // {
-  //   Serial.print(F("Loop - if (! FIN_CARRERA_AB) - Valor FIN_CARRERA_AB"));
-  //   Serial.print(digitalRead(FIN_CARRERA_AB));
-  // }
   // readSensor();
   if (calibracion)
   {
@@ -478,10 +472,10 @@ void loop()
       if ( contador == 0 )
       {
         Serial.println(F("[Modo Calibración]"));
-        Serial.println(F("\n1. Presentar muestra color BLANCO y pulsar FdC medio"));
+        Serial.println(F("\n1. Presentar muestra color BLANCO y pulsar FdC IZ"));
         contador++;
       }
-      while( !digitalRead(FIN_CARRERA_M) )
+      while( !digitalRead(FIN_CARRERA_I) )
       {
         // readSensor();
       }
@@ -505,11 +499,11 @@ void loop()
       case 1:
       if ( contador == 0 )
       {
-        Serial.println(F("\n2. Presentar muestra color NEGRO y pulsar FdC medio..."));
+        Serial.println(F("\n2. Presentar muestra color NEGRO y pulsar FdC IZ..."));
         contador++;
       }
 
-      while( !digitalRead(FIN_CARRERA_M) )
+      while( !digitalRead(FIN_CARRERA_I) )
       {
         // readSensor();
       }
@@ -533,11 +527,11 @@ void loop()
       case 2:
       if ( contador == 0 )
       {
-        Serial.println(F("\n3. Liberar el sensor y pulsar FdC medio para valor sin muestra..."));
+        Serial.println(F("\n3. Liberar el sensor y pulsar FdC IZ para valor sin muestra..."));
         contador++;
       }
 
-      while( !digitalRead(FIN_CARRERA_M) )
+      while( !digitalRead(FIN_CARRERA_I) )
       {
         // readSensor();
       }
@@ -561,11 +555,11 @@ void loop()
       case 3:
       if ( contador == 0 )
       {
-        Serial.println(F("\n4. Colocar el primer color y pulsar FdC medio..."));
+        Serial.println(F("\n4. Colocar el primer color y pulsar FdC IZ..."));
         contador++;
       }
 
-      while( !digitalRead(FIN_CARRERA_M) )
+      while( !digitalRead(FIN_CARRERA_I) )
       {
         // readSensor();
       }
@@ -589,11 +583,11 @@ void loop()
       case 4:
       if ( contador == 0 )
       {
-        Serial.println(F("\n5. Colocar el segundo color y pulsar FdC medio..."));
+        Serial.println(F("\n5. Colocar el segundo color y pulsar FdC IZ..."));
         contador++;
       }
 
-      while( !digitalRead(FIN_CARRERA_M) )
+      while( !digitalRead(FIN_CARRERA_I) )
       {
         // readSensor();
       }
@@ -617,11 +611,11 @@ void loop()
       case 5:
       if ( contador == 0 )
       {
-        Serial.println(F("\n6. Colocar el tercer color y pulsar FdC medio"));
+        Serial.println(F("\n6. Colocar el tercer color y pulsar FdC IZ"));
         contador++;
       }
 
-      while( !digitalRead(FIN_CARRERA_M) )
+      while( !digitalRead(FIN_CARRERA_I) )
       {
         // readSensor();
       }
@@ -650,13 +644,9 @@ void loop()
       break;
 
       case 7:
-      Serial.println(F("\nTest Descartador de Pieza"));
+      Serial.println(F("\nTest Descartador de Pieza..."));
       motorDC_DescartaPieza();
       delay(5000);
-      if(digitalRead(FIN_CARRERA_I))
-      {
-        calibracion = false;
-      }
       break;
     }
   }
