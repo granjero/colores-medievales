@@ -99,7 +99,7 @@ int  contador       = 0;
 int  colorLeido[2]  = {22,44};
 int  colorDestino   = 0;
 int  posicion       = 0;
-int  distanciaFdC   = 0;
+int  distanciaAlMedio   = 0;
 bool calibracion    = false;
 bool datoLeido      = false;
 bool fdcI           = false;
@@ -192,20 +192,15 @@ void motorPaP_Derecha ()
   }
   else
   {
-    while( !digitalRead(FIN_CARRERA_D) )
+    while( ! digitalRead (FIN_CARRERA_D) )
     {
       motorPaP.step(1);
     }
-    //motorPaP.step(200);
-    while( digitalRead(FIN_CARRERA_D) )
+    while( digitalRead (FIN_CARRERA_D) )
     {
       motorPaP.step(-1);
     }
-    //motorPaP.step(-400);
-    // Serial.println(F("[FIN DE CARRERA DERECHO OK]"));
-    // Serial.println(F(""));
     motorPaP_OFF();
-    delay(1000);
   }
 
   motorPaP_OFF();
@@ -213,6 +208,8 @@ void motorPaP_Derecha ()
   fdcD = true;
   fdcI = false;
   fdcM = false;
+
+  delay(1000);
 }
 
 // ===========================================================
@@ -229,21 +226,20 @@ void motorPaP_Izquirda ()
     {
       motorPaP.step(-1);
     }
-    //motorPaP.step(-200);
     while( digitalRead(FIN_CARRERA_I) )
     {
       motorPaP.step(1);
     }
-    //motorPaP.step(400);
-    // Serial.println(F("[FIN DE CARRERA IZQUIERDA OK]"));
-    // Serial.println(F(""));
     motorPaP_OFF();
-    delay(1000);
   }
+
+  motorPaP_OFF();
 
   fdcD = false;
   fdcI = true;
   fdcM = false;
+
+  delay(1000);
 }
 
 // ===========================================================
@@ -260,42 +256,20 @@ void motorPaP_Medio ()
   {
     if ( fdcI )
     {
-      motorPaP.step(distanciaFdC);
-      // Serial.println(F("[Buscando FdC MEDIO] ->"));
-      // while( !digitalRead(FIN_CARRERA_M) )
-      // {
-      //   motorPaP.step(1);
-      // }
-      // motorPaP.step(200);
-      // while( digitalRead(FIN_CARRERA_M) )
-      // {
-      //   motorPaP.step(1);
-      //   contador++;
-      // }
-      // motorPaP.step(-(contador / 2));
+      motorPaP.step(distanciaAlMedio);
     }
     if ( fdcD )
     {
-      motorPaP.step(-distanciaFdC);
-      // Serial.println(F("[Buscando FdC MEDIO] <-"));
-      // while( !digitalRead(FIN_CARRERA_M) )
-      // {
-      //   motorPaP.step(-1);
-      // }
-      // motorPaP.step(-200);
-      // while( digitalRead(FIN_CARRERA_M) )
-      // {
-      //   motorPaP.step(-1);
-      //   contador++;
-      // }
-      // motorPaP.step(contador / 2);
+      motorPaP.step(-distanciaAlMedio);
     }
   }
+
+  motorPaP_OFF();
 
   fdcD = false;
   fdcI = false;
   fdcM = true;
-  motorPaP_OFF();
+
   delay(1000);
 }
 
@@ -324,7 +298,7 @@ void motorPaP_Setup  ()
     motorPaP.step(-1);
   }
   motorPaP_OFF();
-  Serial.println(F("\n[FdC DERECHO OK]"));
+  Serial.println(F("[FdC DERECHO OK]"));
   //  motorPaP.step(-30);
   delay(500);
 
@@ -353,7 +327,7 @@ void motorPaP_Setup  ()
   Serial.println(F(""));
   fdcD = false;
   fdcI = true;
-  distanciaFdC = pasosFCFC / 2;
+  distanciaAlMedio = pasosFCFC / 2;
   delay(1000);
 }
 
