@@ -108,13 +108,7 @@ bool fdcM           = false;
 
 
 /*
-*  ______ _    _ _   _  _____ _____ ____  _   _ ______  _____
-* |  ____| |  | | \ | |/ ____|_   _/ __ \| \ | |  ____|/ ____|
-* | |__  | |  | |  \| | |      | || |  | |  \| | |__  | (___
-* |  __| | |  | | . ` | |      | || |  | | . ` |  __|  \___ \
-* | |    | |__| | |\  | |____ _| || |__| | |\  | |____ ____) |
-* |_|     \____/|_| \_|\_____|_____\____/|_| \_|______|_____/
-*
+* F U N C I O N E S
 */
 
 // ===========================================================
@@ -157,14 +151,11 @@ uint8_t colorMatch(colorData *rgb)
 // Lee sensor y guarda en &sd y &rgb los valores leidos
 void readSensor()
 {
-  //Serial.println(F("readSensor()"));
-
   static  bool  waiting;
 
   if (!waiting)
   {
     CS.read();
-    //Serial.println(F("CS.read()"));
     waiting   = true;
     datoLeido = false;
   }
@@ -174,22 +165,6 @@ void readSensor()
     {
       CS.getRaw(&sd);
       CS.getRGB(&rgb);
-      /*Serial.print(F("readSensor() - "));
-      Serial.print("RAW [");
-      Serial.print(sd.value[0]);
-      Serial.print(",");
-      Serial.print(sd.value[1]);
-      Serial.print(",");
-      Serial.print(sd.value[2]);
-      Serial.print("] ");
-
-      Serial.print("RGB [");
-      Serial.print(rgb.value[TCS230_RGB_R]);
-      Serial.print(",");
-      Serial.print(rgb.value[TCS230_RGB_G]);
-      Serial.print(",");
-      Serial.print(rgb.value[TCS230_RGB_B]);
-      Serial.println("]"); */
       datoLeido = true;
       waiting   = false;
     }
@@ -221,12 +196,12 @@ void motorPaP_Derecha ()
     {
       motorPaP.step(1);
     }
-    motorPaP.step(200);
+    //motorPaP.step(200);
     while( digitalRead(FIN_CARRERA_D) )
     {
       motorPaP.step(-1);
     }
-    motorPaP.step(-400);
+    //motorPaP.step(-400);
     // Serial.println(F("[FIN DE CARRERA DERECHO OK]"));
     // Serial.println(F(""));
     motorPaP_OFF();
@@ -254,12 +229,12 @@ void motorPaP_Izquirda ()
     {
       motorPaP.step(-1);
     }
-    motorPaP.step(-200);
+    //motorPaP.step(-200);
     while( digitalRead(FIN_CARRERA_I) )
     {
       motorPaP.step(1);
     }
-    motorPaP.step(400);
+    //motorPaP.step(400);
     // Serial.println(F("[FIN DE CARRERA IZQUIERDA OK]"));
     // Serial.println(F(""));
     motorPaP_OFF();
@@ -332,7 +307,7 @@ void motorPaP_Setup  ()
   int pasosFCFC = 0;
   Serial.print(F("[Busca FdC derecho... ]"));
   // BUSCA FIN DE CARRERA DERECHO
-  while( !digitalRead(FIN_CARRERA_D) )
+  while( !digitalRead(FIN_CARRERA_D) )  // Mientras el Fin de Carrera DERECHO esté sin activar
   {
     motorPaP.step(1);
     if (digitalRead(FIN_CARRERA_I))     // Encuentra fin de carrera izquierdo MAL
@@ -344,15 +319,14 @@ void motorPaP_Setup  ()
       {}
     }
   }
-  Serial.println(F("[FdC DERECHO OK]"));
-  Serial.println(F(""));
   while (digitalRead(FIN_CARRERA_D))
   {
     motorPaP.step(-1);
   }
-  motorPaP.step(-30);
   motorPaP_OFF();
-  delay(1000);
+  Serial.println(F("\n[FdC DERECHO OK]"));
+  //  motorPaP.step(-30);
+  delay(500);
 
   // BUSCA FIN DE CARRERA IZQUIERDO
   Serial.print(F("[Busca FdC izquierdo... ]"));
@@ -369,15 +343,14 @@ void motorPaP_Setup  ()
       {}
     }
   }
-
-  Serial.println(F("[FdC IZQUIERDA OK]"));
-  Serial.println(F(""));
   while ( digitalRead(FIN_CARRERA_I) )
   {
     motorPaP.step(1);
   }
-  motorPaP.step(30);
+  //motorPaP.step(30);
   motorPaP_OFF();
+  Serial.println(F("[FdC IZQUIERDA OK]"));
+  Serial.println(F(""));
   fdcD = false;
   fdcI = true;
   distanciaFdC = pasosFCFC / 2;
@@ -430,6 +403,29 @@ void motorDC_DescartaPieza()
   while ( ! digitalRead (FIN_CARRERA_AR) )
   {
   }
+  delay(150);
+  digitalWrite(MOTORADCA, LOW);
+  digitalWrite(MOTORADCB, LOW);
+  //delay(250);
+  Serial.print(F("BAJA... "));
+  // Motor DC baja
+  digitalWrite(MOTORADCA, HIGH);
+  digitalWrite(MOTORADCB, LOW);
+  while ( ! digitalRead (FIN_CARRERA_AB) )
+  {
+  }
+  delay(150);
+  // Apaga el motor DC
+  digitalWrite(MOTORADCA, LOW);
+  digitalWrite(MOTORADCB, LOW);
+  delay(250);
+  Serial.println(F("OK! "));
+}
+
+// ===========================================================
+// Motor DC Sube y Baja
+void motorDC_BAJA()
+{
   Serial.print(F("BAJA... "));
   // Motor DC baja
   digitalWrite(MOTORADCA, HIGH);
@@ -440,8 +436,10 @@ void motorDC_DescartaPieza()
   // Apaga el motor DC
   digitalWrite(MOTORADCA, LOW);
   digitalWrite(MOTORADCB, LOW);
-  Serial.println(F("OK! "));
+  delay(250);
+  Serial.println(F(" OK! "));
 }
+
 
 // ===========================================================
 // Setup
@@ -469,6 +467,13 @@ void setup()
   {
     calibracion = true;
   }
+
+  if (digitalRead(FIN_CARRERA_I) && !digitalRead(FIN_CARRERA_D))                 // Tocaron el boton de calibración. Por lo que está en uno
+  {
+    calibracion = true;
+    paso = 7;
+  }
+
   else                                                                          // Usa los datos de calibracion harcodeados.
   {
     CS.setDarkCal(&sdBlack);
@@ -482,8 +487,14 @@ void setup()
 // Loop
 void loop()
 {
+  //Serial.println(digitalRead(FIN_CARRERA_AB));
 
-  readSensor();
+  // if( ! digitalRead (FIN_CARRERA_AB) )
+  // {
+  //   Serial.print(F("Loop - if (! FIN_CARRERA_AB) - Valor FIN_CARRERA_AB"));
+  //   Serial.print(digitalRead(FIN_CARRERA_AB));
+  // }
+  // readSensor();
   if (calibracion)
   {
     readSensor();
@@ -663,6 +674,16 @@ void loop()
       {
       }
       break;
+
+      case 7:
+      Serial.println(F("\nTest Descartador de Pieza"));
+      motorDC_DescartaPieza();
+      delay(5000);
+      if(digitalRead(FIN_CARRERA_I))
+      {
+        calibracion = false;
+      }
+      break;
     }
   }
 
@@ -672,7 +693,7 @@ void loop()
     switch (paso)
     {
       case 0:
-      if ( datoLeido && contador <= 1) // Para evitar fallos hace dos lecturas y las compara.
+      if ( datoLeido && contador <= 2) // Para evitar fallos hace dos lecturas y las compara.
       {
         colorLeido[contador] = colorMatch(&rgb);
         Serial.println(F("\n{ Paso 0 }"));
@@ -683,7 +704,7 @@ void loop()
         Serial.println(contador);
         contador++;
       }
-      if ( contador > 1 )
+      if ( contador > 2 )
       {
         if ( colorLeido[0] == colorLeido[1] )
         {
