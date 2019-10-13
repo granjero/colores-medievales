@@ -15,9 +15,9 @@
 #include <FreqCount.h>                                  // https://github.com/PaulStoffregen/FreqCount
 #include <Stepper.h>                                    // https://www.arduino.cc/en/Reference/Stepper
 
+
 /*
- *  Sensor de Color
- *  http://www.w-r-e.de/robotik/data/opt/tcs230.pdf
+ *  Sensor de Color - http://www.w-r-e.de/robotik/data/opt/tcs230.pdf
  */
 
 // S0                                                   // PIN S0 del Sensor de color en HIGH por hardware
@@ -27,9 +27,9 @@
 #define  S2              12                             // Salida del Sensor de color S2 al pin 12 del micro
 #define  S3              13                             // Salida del Sensor de color S3 al pin 13 del micro
 
+
 /*
- *  Motor Paso a Paso
- *  http://www.dynetics.eu/media/2678/stepper-motors.pdf
+ *  Motor Paso a Paso - http://www.dynetics.eu/media/2678/stepper-motors.pdf
  */
 
 // Driver L298n -> OUT1 azul - OUT2 rojo - OUT3 verde - OUT4 negro
@@ -52,8 +52,8 @@
 #define  FIN_CARRERA_AR   A4                            // Fin de Carrera Arriba cable verde telefono
 
 // Para el switch case del setup (creo)
-#define BLANCO  0
-#define NEGRO   1
+//#define BLANCO  0
+//#define NEGRO   1
 //int ByN =     0;
 
 // Inicializa la libreria del sensor de COLOR en CS MT_TCS230.h
