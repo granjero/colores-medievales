@@ -187,9 +187,6 @@ void readSensor()
   }
 }
 
-
-
-
 // ===========================================================
 // Desliga las bobinas del motor para preservar la circuitería berreta
 void motorPaP_OFF ()
@@ -424,6 +421,23 @@ void motorDC_BAJA()
   digitalWrite(MOTORADCB, LOW);
   delay(250);
   Serial.println(F(" OK! "));
+}
+
+// ===========================================================
+// Lee Sensor Distancia
+int sensorDistancia()
+{
+  long duration, cm;
+
+  digitalWrite(TRIGGER, LOW);
+  delayMicroseconds(5);
+  digitalWrite(TRIGGER, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(TRIGGER, LOW);
+  pinMode(ECHOPIN, INPUT);
+  duration = pulseIn(ECHOPIN, HIGH);
+  cm = (duration/2) / 29.1;     // Divide by 29.1 or multiply by 0.0343
+  return cm;
 }
 
 
@@ -674,14 +688,6 @@ void loop()
     switch (paso)
     {
       case 0:
-      digitalWrite(TRIGGER, LOW);
-      delayMicroseconds(5);
-      digitalWrite(TRIGGER, HIGH);
-      delayMicroseconds(10);
-      digitalWrite(TRIGGER, LOW);
-      pinMode(ECHOPIN, INPUT);
-      duration = pulseIn(ECHOPIN, HIGH);
-      cm = (duration/2) / 29.1;     // Divide by 29.1 or multiply by 0.0343
       if(paso1)
       {
         paso1 = false;
@@ -693,7 +699,7 @@ void loop()
 
       delay(1000);
 
-      if (cm < 10)
+      if (sensorDistancia() < 10)
       {
         paso = 1;
         paso1 = true;
@@ -707,6 +713,10 @@ void loop()
       readSensor();
       if ( datoLeido && contador <= 4) // Para evitar fallos hace dos lecturas y las compara.
       {
+        if (sensorDistancia() > 10)
+        {
+          paso = 4;
+        }
         colorLeido[contador] = colorMatch(&rgb);
         Serial.print(F("\n{ Paso 1 } - Chequeo de color # "));
         // Serial.println(colorLeido[contador]);
@@ -722,8 +732,9 @@ void loop()
         Serial.print(ct[colorLeido[contador]].name);
         Serial.print(F("  "));
         contador++;
+        delay(250);
       }
-      if ( contador > 4 )
+      if ( contador > 3 )
       {
         if ( (colorLeido[0] == colorLeido[1]) && (colorLeido[2] == colorLeido[3]) && (colorLeido[0] == colorLeido[3]) )
         {
@@ -781,9 +792,10 @@ void loop()
       break;
 
       case 4:
-      Serial.println(F("Esperado pieza, no hago nada."));
+      Serial.println(F("\nProblemas con la Pieza. Se reintenta."));
       paso = 0;
       contador = 0;
+      paso1 = true;
       break;
 
       default:
